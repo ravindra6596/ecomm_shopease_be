@@ -189,7 +189,7 @@ def build_email(user_name, email_type, order=None):
 
             <p>{config['footer3']} </p>
                 <p style="text-align:center;font-size:12px;color:#777;">
-                    Need help? kcspune2020@gmail.com
+                    Need help? support.shopease@gmail.com
                 </p>
 
                 <p style="text-align:center;color:{config['color']}">
