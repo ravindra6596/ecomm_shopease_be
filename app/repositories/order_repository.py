@@ -65,7 +65,11 @@ def create_order_repo(
         item.product.price * item.quantity
         for item in cart_items
     )
-
+    total_discount_price = sum(
+        item.product.discount_price * item.quantity
+        for item in cart_items
+    )
+    shipping = round((grand_total - total_discount_price) * 0.10)
     # Payment status logic
     payment_status = PaymentStatus.pending.value
 
@@ -78,6 +82,8 @@ def create_order_repo(
         user_id=user_id,
         address_id=payload.address_id,
         total_amount=grand_total,
+        total_discount_price=total_discount_price,
+        shipping=shipping,
         status=OrderStatus.placed.value,
         payment_status=PaymentStatus.pending.value,
         payment_method=payload.payment_method.value
@@ -432,3 +438,6 @@ def update_payment_status_repo(
     db.refresh(order)
 
     return order
+
+def calculate_shipping(amount):
+       return round(amount *10/100)

@@ -64,6 +64,8 @@ def get_wishlist_route(
             product_id=item.product.id,
             product_name=item.product.name,
             product_price=item.product.price,
+            discount_price=item.product.discount_price,
+            discount=item.product.discount,
             created_at=item.created_at
         )
         for item in wishlist

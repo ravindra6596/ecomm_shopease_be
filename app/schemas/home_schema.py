@@ -12,6 +12,8 @@ class HomeProductResponse(BaseModel):
     id: int
     name: str
     price: float
+    discount_price: float
+    discount: float
     images: List[ProductImageResponse] = []
 
 

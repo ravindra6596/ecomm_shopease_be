@@ -113,8 +113,7 @@ def get_trending_products_repo(
             ).label("trend_score")
         ).outerjoin(
             Wishlist,
-            Wishlist.product_id
-            == Product.id
+            Wishlist.product_id == Product.id
         ).outerjoin(
             CartItem,
             CartItem.product_id == Product.id

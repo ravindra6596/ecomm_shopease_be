@@ -169,6 +169,9 @@ def get_cart_items_route(
             product_name=item.product.name,
             product_price=item.product.price,
             total_price=item.product.price * item.quantity,
+            discount_price=item.product.discount_price * item.quantity,
+            discount=item.product.discount,
+            # total_discount_price=item.product.total_discount_price,
             created_at=item.created_at,
             updated_at=item.updated_at,
         )

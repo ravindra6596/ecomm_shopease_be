@@ -75,6 +75,8 @@ def get_orders_service(
             user_id=order.user_id,
             address_id=order.address_id,
             total_amount=order.total_amount,
+            total_discount_price=order.total_discount_price,
+            shipping=order.shipping,
             status=order.status,
             payment_status=order.payment_status,
             payment_method=order.payment_method,
@@ -88,7 +90,10 @@ def get_orders_service(
                     image_url = build_image_url(item.product.images[0].image_url) if item.product.images else None,
                     quantity=item.quantity,
                     price=item.price,
-                    total_price=item.quantity * item.price
+                    total_price=item.quantity * item.price,
+                    discount_price=item.product.discount_price * item.quantity,
+                    discount=item.product.discount,
+                    # total_discount_price=item.product.total_discount_price * item.quantity
                 )
                 for item in order.items
             ],

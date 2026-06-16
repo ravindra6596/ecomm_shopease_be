@@ -82,7 +82,9 @@ def get_user_by_id(
                         product_name=item.product.name if item.product else None,
                         quantity=item.quantity,
                         price=item.price,
-                        total_price=item.quantity * item.price
+                        total_price=item.quantity * item.price,
+                        discount_price=item.product.discount_price,
+                        discount=item.product.discount,
                     )
                     for item in order.items
                 ],

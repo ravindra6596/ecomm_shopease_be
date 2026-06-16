@@ -11,6 +11,8 @@ class WishlistResponse(BaseModel):
     product_id: int
     product_name: str
     product_price: float
+    discount_price: float
+    discount: float
     created_at: datetime
 
     model_config = {

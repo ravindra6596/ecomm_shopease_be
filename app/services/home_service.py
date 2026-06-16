@@ -93,6 +93,8 @@ def get_home_service(
                 id=item.Product.id,
                 name=item.Product.name,
                 price=item.Product.price,
+                discount_price=item.Product.discount_price,
+                discount=item.Product.discount,
                 images=[
                     ProductImageResponse(
                         id=image.id,
@@ -110,6 +112,8 @@ def get_home_service(
                 id=p.id,
                 name=p.name,
                 price=p.price,
+                discount_price=p.discount_price,
+                discount=p.discount,
                 images=[
                     ProductImageResponse(
                         id=image.id,
@@ -128,6 +132,8 @@ def get_home_service(
                 id=item.Product.id,
                 name=item.Product.name,
                 price=item.Product.price,
+                discount_price=item.Product.discount_price,
+                discount=item.Product.discount,
                 images=[
                     ProductImageResponse(
                         id=image.id,
@@ -146,6 +152,8 @@ def get_home_service(
                 id=p.id,
                 name=p.name,
                 price=p.price,
+                discount_price=p.discount_price,
+                discount=p.discount,
                 images=[
                     ProductImageResponse(
                         id=image.id,

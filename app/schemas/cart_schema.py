@@ -16,6 +16,9 @@ class CartResponse(BaseModel):
     product_name: str
     product_price: float
     total_price: float
+    discount_price: float
+    discount: float
+    total_discount_price: Optional[float] = None
 
     created_at: datetime
     updated_at: Optional[datetime] = None

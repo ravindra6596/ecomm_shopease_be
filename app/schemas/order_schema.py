@@ -24,6 +24,9 @@ class OrderItemResponse(BaseModel):
     quantity: int
     price: float
     total_price: float
+    discount_price: float
+    discount: float
+    total_discount_price: Optional[float] = None
 
     model_config = {
         "from_attributes": True
@@ -35,6 +38,8 @@ class OrderResponse(BaseModel):
     user_id: int
     address_id: int
     total_amount: float
+    total_discount_price: Optional[float] = None
+    shipping: Optional[float] = None
     status: str
     payment_status: str
     payment_method: str
