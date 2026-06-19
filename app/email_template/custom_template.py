@@ -1,6 +1,14 @@
 from datetime import datetime
+from babel.numbers import format_decimal
+
+from app.utils.url_helper import build_image_url
 
 
+def format_price(amount):
+    if amount is None:
+        return "0"
+
+    return f"₹{format_decimal(amount,format='#,##,##0.0', locale='en_IN')}"
 def format_datetime(dt):
     if not dt:
         return ""
@@ -11,8 +19,12 @@ def format_datetime(dt):
         except ValueError:
             return dt
 
-    return dt.strftime("%d-%m-%Y %I:%M %p")
+    return dt.strftime("%d-%m-%Y")
 
+def get_first_image(product):
+    if product.images:
+        return build_image_url(product.images[0].image_url)
+    return ""
 def build_order_block(order):
     if not order:
         return ""
@@ -20,18 +32,195 @@ def build_order_block(order):
     items_html = ""
 
     for item in order.items:
+        print('Image URL',get_first_image(item.product))
         items_html += f"""
-        <tr>
-            <td>{item.product.name}</td>
-            <td>{item.quantity}</td>
-            <td>₹{item.price}</td>
-            <td>₹{item.quantity * item.price}</td>
-        </tr>
+        <div style="
+            border:1px solid #e5e7eb;
+            border-radius:12px;
+            padding:15px;
+            margin-bottom:15px;
+            background:#ffffff;
+        ">
+
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+
+                    <!-- Product Image -->
+                    <td width="90" valign="top">
+                        <img
+                            src="{get_first_image(item.product)}"
+                            width="80"
+                            height="80"
+                            style="
+                                border-radius:10px;
+                                object-fit:cover;
+                                border:1px solid #e5e7eb;
+                            "
+                        >
+                    </td>
+
+                    <!-- Product Details -->
+                    <td valign="top">
+
+                        <h3 style="
+                            margin:0 0 8px 0;
+                            color:#111827;
+                            font-size:16px;
+                        ">
+                            {item.product.name}
+                        </h3>
+
+                        <p style="
+                            margin:0 0 8px 0;
+                            color:#6b7280;
+                            font-size:14px;
+                        ">
+                            Quantity: {item.quantity}
+                        </p>
+
+                        <div style="margin-bottom:8px;">
+
+                            <span style="
+                                color:#9ca3af;
+                                text-decoration:line-through;
+                                font-size:14px;
+                            ">
+                                {format_price(item.price)}
+                            </span>
+
+                            <span style="
+                                margin-left:8px;
+                                color:#111827;
+                                font-size:16px;
+                                font-weight:bold;
+                            ">
+                                {format_price(item.product.discount_price)}
+                            </span>
+
+                        </div>
+
+                        <span style="
+                            background:#dcfce7;
+                            color:#15803d;
+                            padding:4px 8px;
+                            border-radius:20px;
+                            font-size:12px;
+                            font-weight:bold;
+                        ">
+                            SAVE {format_price(item.price - item.product.discount_price)}
+                        </span>
+
+                        <p style="
+                            margin-top:10px;
+                            color:#16a34a;
+                            font-size:15px;
+                            font-weight:bold;
+                        ">
+                            Total: {format_price(item.quantity * item.product.discount_price)}
+                        </p>
+
+                    </td>
+
+                </tr>
+            </table>
+
+        </div>
         """
+    saved_amount = (
+            order.total_amount -
+            order.total_discount_price
+    )
+    summary_html = f"""
+    <div style="
+        background:#ffffff;
+        border:1px solid #e5e7eb;
+        border-radius:12px;
+        padding:15px;
+        margin-top:15px;
+    ">
+
+        <table width="100%">
+            <tr>
+                <td>Subtotal</td>
+                <td align="right">
+                    {format_price(order.total_amount)}
+                </td>
+            </tr>
+             <tr>
+                <td>
+                    Total Discount
+                </td>
+                <td align="right">
+                    {format_price(order.total_amount - order.total_discount_price)}
+                </td>
+            </tr>
+            <tr>
+                <td>Shipping Charges</td>
+                <td align="right">
+                    {format_price(order.shipping)}
+                </td>
+            </tr>
+
+            <tr>
+                <td style="color:#16a34a;font-weight:bold;">
+                    Total Saving
+                </td>
+                <td align="right"
+                    style="color:#16a34a;font-weight:bold;">
+                    {format_price(saved_amount - order.shipping)}
+                </td>
+            </tr>
+
+        </table>
+
+    </div>
+    """
+
+    grand_total_html = f"""
+    <div style="
+        background:#f0fdf4;
+        border:2px solid #bbf7d0;
+        border-radius:12px;
+        padding:20px;
+        margin-top:20px;
+    ">
+
+        <table width="100%">
+            <tr>
+                <td style="
+                    font-size:15px;
+                    font-weight:bold;
+                    color:#166534;
+                ">
+                    Grand Total
+                </td>
+
+                <td align="right" style="
+                    font-size:18px;
+                    font-weight:bold;
+                    color:#16a34a;
+                ">
+                    {format_price(order.total_discount_price + order.shipping)}
+                </td>
+            </tr>
+        </table>
+
+    </div>
+    """
 
     address = order.address
     created_at = format_datetime(order.created_at)
     delivery_date = format_datetime(order.delivery_date)
+    if order.status.lower() == "delivered":
+        delivery_html = """
+        <p style="color:#16a34a;font-weight:bold;">
+            🎉 <b>Delivered Successfully</b>
+        </p>
+        """
+    else:
+        delivery_html = f"""
+        <p>🚚 <b>Expected Delivery:</b> {delivery_date}</p>
+        """
     return f"""
     <div style="background:#F9FAFB;padding:15px;border-radius:10px;margin-top:20px;">
 
@@ -39,20 +228,16 @@ def build_order_block(order):
 
         <p><b>Order ID:</b> #{order.id}</p>
         <p><b>Status:</b> {order.status.upper()}</p>
-        <h3>💰 Total Amount: ₹{order.total_amount}</h3>
+        <h3>💰 Total Amount: {format_price(order.total_discount_price + order.shipping)}</h3>
         <p>🗓 <b>Order Date:</b> {created_at}</p>
-        <p>🚚 <b>Expected Delivery:</b> {delivery_date}</p>
+        {delivery_html}
         <h3>🧾 Items</h3>
-
-        <table width="100%" border="1" cellpadding="8" cellspacing="0">
-            <tr style="background:#f3f4f6;">
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Total</th>
-            </tr>
+        
             {items_html}
-        </table>
+            
+            {summary_html}
+            
+            {grand_total_html}
 
         <h3>📍 Delivery Address</h3>
 
@@ -65,6 +250,7 @@ def build_order_block(order):
         
     </div>
     """
+
 
 EMAIL_CONFIG = {
     "signup": {
@@ -140,8 +326,8 @@ EMAIL_CONFIG = {
     }
 }
 
-def build_email(user_name, email_type, order=None):
 
+def build_email(user_name, email_type, order=None):
     config = EMAIL_CONFIG[email_type]
 
     order_block = build_order_block(order) if config["show_order"] else ""

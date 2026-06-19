@@ -1,6 +1,11 @@
+import os
 from io import BytesIO
+
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
@@ -9,7 +14,10 @@ from reportlab.platypus import (
     Spacer,
     Image
 )
-from reportlab.lib.styles import getSampleStyleSheet,ParagraphStyle
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+font_path = os.path.join(BASE_DIR, "assets", "GoogleSans-Medium.ttf")
+pdfmetrics.registerFont(TTFont("GoogleSans", font_path))
 
 def generate_order_invoice(order):
 
@@ -25,6 +33,9 @@ def generate_order_invoice(order):
 
     styles = getSampleStyleSheet()
 
+    for s in styles.byName.values():
+        s.fontName = "GoogleSans"
+
     title_style = styles["Heading1"]
 
     right_style = ParagraphStyle(
@@ -37,6 +48,13 @@ def generate_order_invoice(order):
         width=80,
         height=80
     )
+    company_style = ParagraphStyle(
+        "company",
+        fontName="GoogleSans",
+        fontSize=10,
+        leading=14,
+    )
+
     company_info = Paragraph(
         """
         <b>ShopEase</b><br/>
@@ -44,7 +62,7 @@ def generate_order_invoice(order):
         support@shopease.com<br/>
         +91 9876543210
         """,
-        styles["BodyText"]
+        company_style
     )
 
     left_section = Table(
@@ -58,7 +76,11 @@ def generate_order_invoice(order):
             ("LEFTPADDING", (1, 0), (1, 0), 10),
         ])
     )
-
+    normal_style = ParagraphStyle(
+        "normal",
+        fontName="GoogleSans",
+        fontSize=10,
+    )
     left_section.setStyle(
         TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -192,12 +214,25 @@ def generate_order_invoice(order):
 
     product_data = [
         [
-            "Product",
-            "Qty",
-            "Price",
-            "Total",
+            "Product (₹)",
+            "Qty (₹)",
+            "Price (₹)",
+            "Selling Price (₹)",
+            "Total (₹)",
         ]
     ]
+
+    green_style = ParagraphStyle(
+        "green_price",
+        parent=styles["BodyText"],
+        textColor=colors.green,
+        alignment=TA_CENTER,
+    )
+    discount_green_style = ParagraphStyle(
+        "discount_green_style",
+        parent=styles["BodyText"],
+        textColor=colors.green,
+    )
 
     for item in order.items:
         product_data.append(
@@ -208,30 +243,40 @@ def generate_order_invoice(order):
                 ),
                 str(item.quantity),
                 f"{item.price:,.2f}",
-                f"{(item.quantity * item.price):,.2f}",
+                Paragraph(
+            f"<b>{item.product.discount_price:,.2f}</b>",
+                    green_style,
+                ),
+                f"{(item.quantity * item.product.discount_price):,.2f}",
             ]
         )
 
     product_table = Table(
         product_data,
-        colWidths=[290, 60, 85, 85],
+        colWidths=[210, 60, 85, 85],
+
     )
 
-    product_table.setStyle(
-        TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2874F0")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+    table_style = [
+        ("FONTNAME", (0, 0), (-1, -1), "GoogleSans"),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2874F0")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "GoogleSans"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#DADADA")),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+        ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]
 
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+    for row in range(1, len(product_data)):
+        if row % 2 == 0:
+            table_style.append(
+                ("BACKGROUND", (0, row), (-1, row), colors.HexColor("#F8F9FA"))
+            )
 
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-
-            ("ALIGN", (1, 1), (-1, -1), "CENTER"),
-
-            ("TOPPADDING", (0, 0), (-1, 0), 8),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-        ])
-    )
+    product_table.setStyle(TableStyle(table_style))
 
     elements.append(product_table)
     elements.append(Spacer(1, 20))
@@ -241,16 +286,29 @@ def generate_order_invoice(order):
     # ==================================================
 
     subtotal = order.total_amount
-    shipping = 0
-    discount = 0
-    grand_total = subtotal
+    discounted_total = order.total_discount_price
+    discount = round(subtotal - discounted_total)
+    shipping = order.shipping
+    grand_total = round(discounted_total + shipping)
 
     totals_table = Table(
         [
-            ["Subtotal", f"{subtotal:,.2f}"],
-            ["Shipping", f"{shipping:,.2f}"],
-            ["Discount", f"{discount:,.2f}"],
-            ["Grand Total", f"RS. {grand_total:,.2f}"],
+            [
+                Paragraph("Subtotal", styles["Normal"]),
+                Paragraph(f"{subtotal:,.2f}", styles["Normal"]),
+            ],
+            [
+                Paragraph("Discount", styles["Normal"]),
+                Paragraph(f"<b>{discount:,.2f}</b>", discount_green_style),
+            ],
+            [
+                Paragraph("Protect Promise Fee", styles["Normal"]),
+                Paragraph(f"{shipping:,.2f}", styles["Normal"]),
+            ],
+            [
+                Paragraph("Grand Total", styles["Normal"]),
+                Paragraph(f"₹ {grand_total:,.2f}", styles["Normal"]),
+            ],
         ],
         colWidths=[120, 120],
     )
@@ -263,7 +321,7 @@ def generate_order_invoice(order):
 
             ("BACKGROUND", (0, 3), (-1, 3), colors.HexColor("#E8F0FE")),
 
-            ("FONTNAME", (0, 3), (-1, 3), "Helvetica-Bold"),
+            ("FONTNAME", (0, 3), (-1, 3), "GoogleSans"),
         ])
     )
 

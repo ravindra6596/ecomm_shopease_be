@@ -26,6 +26,7 @@ def create_products_route(
     category_id: int = Form(...),
     discount: float = Form(0),
     return_policy: str = Form(None),
+    is_featured: bool = Form(False),
     images: List[UploadFile] = File([]),   # optional like your old images
     db: Session = Depends(get_db),
     token_data: dict = Depends(require_admin),
@@ -37,7 +38,8 @@ def create_products_route(
             price=price,
             category_id=category_id,
             discount=discount,
-            return_policy=return_policy
+            return_policy=return_policy,
+            is_featured=is_featured,
         )
 
         create_products = product_service.create_product_service(
@@ -57,6 +59,7 @@ def create_products_route(
                 "description": payload.description,
                 "images": [img.filename for img in images],
                 "user_id": user_id,
+                "is_featured": payload.is_featured
 
             }
         )
@@ -164,6 +167,7 @@ def update_product_route(
     db: Session = Depends(get_db),
     discount: float = Form(0),
     return_policy: str = Form(None),
+    is_featured: Optional[bool] = Form(False),
     token_data: dict = Depends(require_admin)
 ):
     product_data = ProductUpdate(
@@ -172,7 +176,8 @@ def update_product_route(
         price=price,
         category_id=category_id,
         discount=discount,
-        return_policy=return_policy
+        return_policy=return_policy,
+        is_featured=is_featured
     )
 
     updated_product = product_service.update_product_service(

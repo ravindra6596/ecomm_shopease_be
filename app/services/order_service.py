@@ -6,6 +6,7 @@ from app.repositories import order_repository
 from app.repositories.order_repository import get_order_by_id_repo
 from app.schemas.order_schema import OrderItemResponse, OrderResponse
 from app.services import notification_service
+from app.utils.email import send_email
 from app.utils.enums import NotificationType, OrderStatus
 from app.utils.url_helper import build_image_url
 
@@ -24,11 +25,11 @@ def create_order_service(
         # email_body = build_order_email(order)
         # email_body = build_email(user_name, "order_placed", order)
         subject, body = build_email(user_name, "order_placed", order)
-        # send_email(
-        #     to_email=user_email,
-        #     subject=subject,
-        #     body=body
-        # )
+        send_email(
+            to_email=user_email,
+            subject=subject,
+            body=body
+        )
     #     SEND NOTIFICATION HERE (business logic)
     notification_service.send_notification_service(
         db=db,
@@ -148,11 +149,11 @@ def cancel_order_service(
     user_email = token.get("email")
     user_name = token.get("name")
     subject, body = build_email(user_name, "cancelled", order)
-    # send_email(
-    #     to_email=user_email,
-    #     subject=subject,
-    #     body=body
-    # )
+    send_email(
+        to_email=user_email,
+        subject=subject,
+        body=body
+    )
     # Send Notification
     notification_service.send_notification_service(
         db=db,
@@ -186,11 +187,11 @@ def update_order_status_service(
     }
     email_type = status_map.get(order_status_update.status)
     subject, body = build_email(user_name, email_type, order_status_update)
-    # send_email(
-    #     to_email=user_email,
-    #     subject=subject,
-    #     body=body
-    # )
+    send_email(
+        to_email=user_email,
+        subject=subject,
+        body=body
+    )
     # Send Notification
     notification_map = {
         OrderStatus.placed.value: {

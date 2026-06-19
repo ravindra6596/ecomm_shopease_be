@@ -36,7 +36,8 @@ def create_product_repo(db: Session, product: ProductCreate, files: list, token:
             created_by=user_id,
             discount=product.discount,
             discount_price=discount_price,
-            return_policy=product.return_policy
+            return_policy=product.return_policy,
+            is_featured=product.is_featured
         )
 
         db.add(product_repo)

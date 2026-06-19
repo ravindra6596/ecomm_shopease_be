@@ -13,6 +13,7 @@ class ProductCreate(BaseModel):
     discount: Optional[float] = Field(None, ge=0, le=100)
     return_policy: Optional[str] = None
     category_id: int
+    is_featured: Optional[bool] = False
     @field_validator("name")
     @classmethod
     def name_must_be_alpha(cls, v):
@@ -27,6 +28,7 @@ class ProductUpdate(BaseModel):
     discount: Optional[float] = Field(None, ge=0, le=100)
     return_policy: Optional[str] = None
     category_id: Optional[int]= None
+    is_featured: Optional[bool] = False
     @field_validator("name")
     @classmethod
     def name_must_be_alpha(cls, v):

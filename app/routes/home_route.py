@@ -23,7 +23,7 @@ def get_home_data(
     return (
         CustomResponse.success_response(
             statusCode=200,
-            message= "Home data fetched successfully",
+            message= ConstStrings.HOME_DATA_FETCHED,
             data=result
         )
     )

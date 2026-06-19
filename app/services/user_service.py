@@ -76,6 +76,7 @@ def get_user_by_id(
                 payment_status=order.payment_status,
                 payment_method=order.payment_method,
                 created_at=order.created_at,
+                updated_at=order.updated_at,
                 items=[
                     OrderItemResponse(
                         product_id=item.product_id,

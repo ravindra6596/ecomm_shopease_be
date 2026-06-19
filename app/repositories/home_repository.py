@@ -1,3 +1,4 @@
+import random
 from typing import Optional
 
 from sqlalchemy import desc, func
@@ -96,7 +97,9 @@ def get_featured_products_repo(
         products = products.filter(
             Product.category_id == category_id
         )
-    return products.limit(6).all()
+    return (products
+            .order_by(Product.created_at.desc())
+            .limit(6).all())
 
 # Trending Products Repo
 def get_trending_products_repo(
@@ -136,6 +139,9 @@ def get_trending_products_repo(
     )
 
 # Banner Repo
+from datetime import datetime
+from collections import defaultdict
+
 def get_home_banners_repo(
     db: Session,
     category_id: Optional[int] = None
@@ -155,7 +161,6 @@ def get_home_banners_repo(
     # CASE 1: category selected
     # =========================
     if category_id and category_id != 0:
-
         return (
             base_query
             .filter(Banner.category_id == category_id)
@@ -164,30 +169,33 @@ def get_home_banners_repo(
         )
 
     # =========================
-    # CASE 2: homepage (1 per category)
+    # CASE 2: homepage
+    # Random banner per category
     # =========================
 
-    subquery = (
-        db.query(
-            Banner.category_id,
-            func.max(Banner.id).label("max_id")
-        )
-        .filter(
-            Banner.is_deleted == False,
-            Banner.is_active == True,
-            Banner.category_id.isnot(None)
-        )
-        .group_by(Banner.category_id)
-        .subquery()
+    banners = (
+        base_query
+        .filter(Banner.category_id.isnot(None))
+        .all()
     )
 
-    result = (
-        db.query(Banner)
-        .join(subquery, Banner.id == subquery.c.max_id)
-        .join(Category, Banner.category_id == Category.id)
-        .options(joinedload(Banner.category))
-        .order_by(Category.name.asc())
-        .all()
+    grouped_banners = defaultdict(list)
+
+    for banner in banners:
+        grouped_banners[banner.category_id].append(banner)
+
+    result = []
+
+    for _, category_banners in grouped_banners.items():
+
+        selected_banner = random.choice(category_banners)
+
+        result.append(selected_banner)
+
+    result.sort(
+        key=lambda x: x.category.name.lower()
+        if x.category and x.category.name
+        else ""
     )
 
     return result

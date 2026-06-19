@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import secrets
 
 import bcrypt
 from fastapi import Depends, HTTPException
@@ -57,3 +58,7 @@ def require_admin(token_data: dict = Depends(verify_token)):
             detail="Only admin can access this API"
         )
     return token_data
+
+# email verification
+def generate_email_verification_token():
+    return secrets.token_urlsafe(32)

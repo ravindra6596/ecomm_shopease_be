@@ -1,16 +1,20 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.email_template.custom_template import build_email
+from app.config.config import settings
+from app.email_template.email_verification_template import EMAIL_VERIFY_TEMPLATE
 from app.models.cart_item_model import CartItem
 from app.models.cart_model import Cart
 from app.models.token import BlacklistedToken
 from app.repositories import auth_repository
 from app.schemas.auth_schema import UserCreate
-from app.utils.auth_utils import hash_password, create_access_token, verify_password, create_refresh_token
 from app.utils.auth_dependency import verify_refresh_token
+from app.utils.auth_utils import hash_password, create_access_token, verify_password, create_refresh_token, \
+    generate_email_verification_token
 from app.utils.email import send_email
 from app.utils.strings import ConstStrings
+
+BASE_URL = settings.BASE_URL
 
 
 def register_service(
@@ -31,14 +35,59 @@ def register_service(
         )
 
     hashed_password = hash_password(emp.password)
-    # Send email after register
-    subject, body = build_email(emp.name, "signup")
-    send_email(emp.email, subject, body)
-    return auth_repository.register_repo(
+
+    verification_token = generate_email_verification_token()
+    user = auth_repository.register_repo(
         db,
         emp,
-        hashed_password
+        hashed_password,
+        verification_token
     )
+    # Send email after register
+    verification_link = (
+        f"{BASE_URL}/auth/verify-email?"
+        f"token={verification_token}"
+    )
+
+    subject = "Verify your email"
+
+    body = EMAIL_VERIFY_TEMPLATE.format(
+        name=emp.name,
+        verification_link=verification_link
+    )
+
+    send_email(
+        emp.email,
+        subject,
+        body
+    )
+
+    return user
+
+
+# email verification service
+def verify_email_service(
+    db: Session,
+    token: str
+):
+    user = auth_repository.get_user_by_verification_token_repo(
+        db,
+        token
+    )
+
+    if not user:
+        return "invalid"
+    if user.is_email_verified:
+        return "already_verified"
+
+    user.is_email_verified = True
+    user.email_verification_token = None
+
+    db.commit()
+
+    return "verified"
+
+
 #login
 def login_service(
     db: Session,
@@ -56,7 +105,11 @@ def login_service(
             status_code=404,
             detail=ConstStrings.NO_USER
         )
-
+    if not user.is_email_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email first"
+        )
     if not verify_password(
         password,
         user.password

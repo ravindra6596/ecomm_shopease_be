@@ -40,8 +40,7 @@ def create_product_service(db: Session, product: ProductCreate,files: list,token
         # 🔥 CALCULATION HERE
     discount_percent = product.discount or 0
 
-    discount_price = product.price - (product.price * discount_percent / 100)
-    discount_price = round(discount_price, 2)
+    discount_price = round(product.price * (100 - discount_percent) / 100)
 
     create_product = products_repository.create_product_repo(db, product,files,token,discount_price)
         #     SEND NOTIFICATION HERE (business logic)
@@ -154,7 +153,7 @@ def update_product_service(db, id: int, product, files, token: dict):
     price = update_data.get("price", product_db.price)
     discount = update_data.get("discount", product_db.discount or 0)
 
-    discount_price = round(price - (price * discount / 100), 2)
+    discount_price = round(price * (100 - discount) / 100)
 
     update_data["discount_price"] = discount_price
 

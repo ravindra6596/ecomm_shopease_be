@@ -82,7 +82,7 @@ def create_order_repo(
         user_id=user_id,
         address_id=payload.address_id,
         total_amount=grand_total,
-        total_discount_price=total_discount_price,
+        total_discount_price=round(total_discount_price),
         shipping=shipping,
         status=OrderStatus.placed.value,
         payment_status=PaymentStatus.pending.value,

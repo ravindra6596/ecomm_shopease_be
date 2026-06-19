@@ -2,7 +2,7 @@ class ConstStrings:
 # Authentication messages
     INTERNAL_SERVER_ERROR = 'Internal Server Error'
     VALIDATION_ERROR = 'Validation Error'
-    USER_REGISTER = 'User Registered successfully!'
+    USER_REGISTER = 'Account created successfully. Please check your email and verify your account.'
     RATE_EXCEEDED = 'Rate exceeded'
     TOO_MANY = 'Too many failed attempts. Try later!'
     LOGIN_SUCCESS = 'Login successful'
@@ -179,3 +179,6 @@ class ConstStrings:
     NOTIFICATION_DELETED = 'Notification deleted successfully'
     NOTIFICATION_READ = 'Notification read successfully'
     NOTIFICATION_SENT = 'Notification sent successfully'
+
+    # Home
+    HOME_DATA_FETCHED = 'Home data fetched successfully'

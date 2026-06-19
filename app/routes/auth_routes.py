@@ -3,12 +3,13 @@ from time import time
 from fastapi import APIRouter, Depends, HTTPException, Request, FastAPI
 from slowapi import Limiter
 from sqlalchemy.orm import Session
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 
 from app.config.config import settings
 from app.core.event_logger import log_event
 from app.core.log_events import UserEvent
 from app.database.connection import get_db
+from app.email_template.email_verification_template import SUCCESS_HTML, ALREADY_VERIFIED_HTML, INVALID_HTML
 from app.schemas.auth_schema import UserCreate, UserResponse, UserLogin
 from app.schemas.response_schema import CustomResponse
 
@@ -61,6 +62,30 @@ def register_route(
             )
         )
 
+@router.get("/verify-email")
+def verify_email(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    result = auth_service.verify_email_service(
+        db,
+        token
+    )
+    if result == "verified":
+        return HTMLResponse(content=SUCCESS_HTML)
+
+    elif result == "already_verified":
+        return HTMLResponse(content=ALREADY_VERIFIED_HTML)
+
+    return HTMLResponse(
+        content=INVALID_HTML,
+        status_code=400
+    )
+    # return CustomResponse.success_response(
+    #     statusCode=200,
+    #     message="Email verified successfully",
+    #     data={}
+    # )
 
 # Rate limiter for wrong password
 limiter = Limiter(key_func=lambda request: request.client.host)  # use IP as key
